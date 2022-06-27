@@ -1,0 +1,94 @@
+{
+  "name": "sortlengthyimports",
+  "displayName": "Sort Lengthy Imports",
+  "description": "Opinionated import sorting by length and context",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.68.0"
+  },
+  "categories": [
+    "Other",
+    "Formatters"
+  ],
+  "keywords": [
+    "ES6",
+    "ES2015",
+    "sort",
+    "sorting",
+    "import",
+    "formatter",
+    "react",
+    "vue",
+    "angular",
+    "javascript",
+    "imports",
+    "sort",
+    "sort-import",
+    "js",
+    "jsx"
+  ],
+  "activationEvents": [
+    "onCommand:sortlengthyimports.sortlengthy",
+    "onLanguage:javascript",
+    "onLanguage:javascriptreact",
+    "onLanguage:typescript",
+    "onLanguage:typescriptreact"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "sortlengthyimports.sortlengthy",
+        "title": "Sort Lengthy Imports"
+      }
+    ],
+    "configuration": {
+      "title": "Sort Lengthy Imports configuration",
+      "properties": {
+        "sortlengthyimports.onSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically sort imports on save."
+        },
+        "sortlengthyimports.suppressWarnings": {
+          "type": "boolean",
+          "default": false,
+          "description": "Suppress warnings when sorting fails."
+        },
+        "sortlengthyimports.languages": {
+          "type": "array",
+          "default": [
+            "javascript",
+            "typescript"
+          ],
+          "description": "Languages to sort on save."
+        }
+      }
+    }
+  },
+  "main": "./extension.js",
+  "icon": "assets/logo.png",
+  "publisher": "mario-iliev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mario-iliev/vscode-sort-lengthy-imports.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mario-iliev/vscode-sort-lengthy-imports/issues"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "pretest": "yarn run lint",
+    "test": "node ./test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.68.0",
+    "@types/glob": "^7.2.0",
+    "@types/mocha": "^9.1.1",
+    "@types/node": "16.x",
+    "eslint": "^8.16.0",
+    "glob": "^8.0.3",
+    "mocha": "^10.0.0",
+    "typescript": "^4.7.2",
+    "@vscode/test-electron": "^2.1.3"
+  }
+}
