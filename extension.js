@@ -51,13 +51,53 @@ function sort(document) {
     const isWindows = rawText.includes("\r\n");
     const newLineChar = isWindows ? "\r\n" : "\n";
     const text = rawText.split(newLineChar);
+    let startedScrapingImportText = false;
+    let imports = [];
+    let tempImport = [];
 
-    const isImportStatement = (string) =>
-      string.startsWith("import") &&
-      (string.endsWith('"') || string.endsWith(";"));
+    const checkIfLineShouldStay = (line) => {
+      let lineShouldStay = false;
 
-    const imports = text.filter(isImportStatement);
-    const code = text.filter((line) => !isImportStatement(line));
+      if (startedScrapingImportText) {
+        lineShouldStay = true;
+      }
+
+      if (!startedScrapingImportText && line.startsWith("import")) {
+        startedScrapingImportText = true;
+        lineShouldStay = true;
+      }
+
+      if (startedScrapingImportText && line.endsWith('";')) {
+        startedScrapingImportText = false;
+      }
+
+      return lineShouldStay;
+    };
+
+    const importsLines = text.filter((line) => checkIfLineShouldStay(line));
+
+    startedScrapingImportText = false;
+
+    importsLines.forEach((line) => {
+      if (line.startsWith("import") && line.endsWith('";')) {
+        imports.push(line);
+      } else {
+        if (!line.startsWith("import") && !line.endsWith('";')) {
+          tempImport.push(line);
+        }
+
+        if (line.endsWith('";')) {
+          tempImport = tempImport.sort((a, b) => b.length - a.length);
+          tempImport = `import {${newLineChar}${tempImport.join(
+            newLineChar
+          )}${newLineChar}${line}`;
+          tempImport && imports.push(tempImport);
+          tempImport = [];
+        }
+      }
+    });
+
+    const code = text.filter((line) => !checkIfLineShouldStay(line));
     const importsByContext = {
       external: [],
       internal: [],
@@ -78,7 +118,6 @@ function sort(document) {
 
     const hasExternals = Boolean(importsByContext.external.length);
     const hasInternals = Boolean(importsByContext.internal.length);
-    const hasImports = hasExternals || hasInternals;
     const importsSeparator =
       hasInternals && hasExternals ? `${newLineChar}${newLineChar}` : "";
     const externalExports = hasExternals
@@ -87,10 +126,9 @@ function sort(document) {
     const internalExports = hasInternals
       ? `${importsByContext.internal.join(newLineChar)}`
       : "";
-    const afterImportsSeparator = hasImports ? newLineChar : "";
     const restOfDocument = code.join(newLineChar);
 
-    return `${externalExports}${importsSeparator}${internalExports}${afterImportsSeparator}${restOfDocument}`;
+    return `${externalExports}${importsSeparator}${internalExports}${restOfDocument}`;
   } else {
     return document.getText();
   }
@@ -121,10 +159,6 @@ function registerWillSaveTextDocument() {
 
 function getOnSaveSetting() {
   return workspace.getConfiguration("sortlengthyimports").get("onSave");
-}
-
-function getLanguagesSetting() {
-  return workspace.getConfiguration("sortlengthyimports").get("languages");
 }
 
 function updateSaveRegistration() {
