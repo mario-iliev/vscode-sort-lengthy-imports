@@ -44,56 +44,56 @@ function sortImports() {
 }
 
 function sort(document) {
-  if (!getLanguagesSetting().some((l) => document.languageId.includes(l))) {
-    return;
-  }
-
   const extension = extname(document.fileName).substring(1);
 
-  return (
-    supportedFileExtensions[extension] && sortJS(document.getText().split(/\n/))
-  );
-}
+  if (supportedFileExtensions[extension]) {
+    const rawText = document.getText();
+    const isWindows = rawText.includes("\r\n");
+    const newLineChar = isWindows ? "\r\n" : "\n";
+    const text = rawText.split(newLineChar);
 
-function sortJS(text) {
-  const isImportStatement = (string) =>
-    string.startsWith("import") &&
-    (string.endsWith('"') || string.endsWith(";"));
+    const isImportStatement = (string) =>
+      string.startsWith("import") &&
+      (string.endsWith('"') || string.endsWith(";"));
 
-  const imports = text.filter(isImportStatement);
-  const code = text.filter((line) => !isImportStatement(line));
-  const importsByContext = {
-    external: [],
-    internal: [],
-  };
+    const imports = text.filter(isImportStatement);
+    const code = text.filter((line) => !isImportStatement(line));
+    const importsByContext = {
+      external: [],
+      internal: [],
+    };
 
-  imports.forEach((string) => {
-    if (string) {
-      if (string.includes('from ".') || string.includes('from "/')) {
-        importsByContext.internal.push(string);
-      } else {
-        importsByContext.external.push(string);
+    imports.forEach((string) => {
+      if (string) {
+        if (string.includes('from ".') || string.includes('from "/')) {
+          importsByContext.internal.push(string);
+        } else {
+          importsByContext.external.push(string);
+        }
       }
-    }
-  });
+    });
 
-  importsByContext.external.sort((a, b) => b.length - a.length);
-  importsByContext.internal.sort((a, b) => b.length - a.length);
+    importsByContext.external.sort((a, b) => b.length - a.length);
+    importsByContext.internal.sort((a, b) => b.length - a.length);
 
-  const hasExternals = Boolean(importsByContext.external.length);
-  const hasInternals = Boolean(importsByContext.internal.length);
-  const hasImports = hasExternals || hasInternals;
-  const importsSeparator = hasInternals && hasExternals ? "\n\n" : "";
-  const externalExports = hasExternals
-    ? `${importsByContext.external.join("\n")}`
-    : "";
-  const internalExports = hasInternals
-    ? `${importsByContext.internal.join("\n")}`
-    : "";
-  const afterImportsSeparator = hasImports ? "\n" : "";
-  const restOfDocument = code.join("\n");
+    const hasExternals = Boolean(importsByContext.external.length);
+    const hasInternals = Boolean(importsByContext.internal.length);
+    const hasImports = hasExternals || hasInternals;
+    const importsSeparator =
+      hasInternals && hasExternals ? `${newLineChar}${newLineChar}` : "";
+    const externalExports = hasExternals
+      ? `${importsByContext.external.join(newLineChar)}`
+      : "";
+    const internalExports = hasInternals
+      ? `${importsByContext.internal.join(newLineChar)}`
+      : "";
+    const afterImportsSeparator = hasImports ? newLineChar : "";
+    const restOfDocument = code.join(newLineChar);
 
-  return `${externalExports}${importsSeparator}${internalExports}${afterImportsSeparator}${restOfDocument}`;
+    return `${externalExports}${importsSeparator}${internalExports}${afterImportsSeparator}${restOfDocument}`;
+  } else {
+    return document.getText();
+  }
 }
 
 function sortImportsOnSave({ document, waitUntil }) {

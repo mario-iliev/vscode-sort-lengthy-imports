@@ -2,7 +2,7 @@
   "name": "sortlengthyimports",
   "displayName": "Sort Lengthy Imports",
   "description": "Opinionated import sorting by length and context",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.68.0"
   },
@@ -67,7 +67,7 @@
   },
   "main": "./extension.js",
   "icon": "assets/logo.png",
-  "publisher": "mario-iliev",
+  "publisher": "marioiliev",
   "repository": {
     "type": "git",
     "url": "https://github.com/mario-iliev/vscode-sort-lengthy-imports.git"
