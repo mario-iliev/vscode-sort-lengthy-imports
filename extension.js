@@ -45,9 +45,9 @@ function sortImports() {
 
 function sort(document) {
   const extension = extname(document.fileName).substring(1);
+  const rawText = document.getText();
 
   if (supportedFileExtensions[extension]) {
-    const rawText = document.getText();
     const isWindows = rawText.includes("\r\n");
     const newLineChar = isWindows ? "\r\n" : "\n";
     const text = rawText.split(newLineChar);
@@ -67,7 +67,10 @@ function sort(document) {
         lineShouldStay = true;
       }
 
-      if (startedScrapingImportText && line.endsWith('";')) {
+      if (
+        startedScrapingImportText &&
+        (line.endsWith('";') || line.endsWith("';"))
+      ) {
         startedScrapingImportText = false;
       }
 
@@ -79,14 +82,16 @@ function sort(document) {
     startedScrapingImportText = false;
 
     importsLines.forEach((line) => {
-      if (line.startsWith("import") && line.endsWith('";')) {
+      const isLineEnd = line.endsWith('";') || line.endsWith("';");
+
+      if (line.startsWith("import") && isLineEnd) {
         imports.push(line);
       } else {
-        if (!line.startsWith("import") && !line.endsWith('";')) {
+        if (!line.startsWith("import") && !isLineEnd) {
           tempImport.push(line);
         }
 
-        if (line.endsWith('";')) {
+        if (isLineEnd) {
           tempImport = tempImport.sort((a, b) => b.length - a.length);
           tempImport = `import {${newLineChar}${tempImport.join(
             newLineChar
@@ -105,7 +110,12 @@ function sort(document) {
 
     imports.forEach((string) => {
       if (string) {
-        if (string.includes('from ".') || string.includes('from "/')) {
+        if (
+          string.includes('from ".') ||
+          string.includes('from "/') ||
+          string.includes("from '.") ||
+          string.includes("from '/")
+        ) {
           importsByContext.internal.push(string);
         } else {
           importsByContext.external.push(string);
