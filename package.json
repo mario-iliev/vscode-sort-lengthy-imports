@@ -2,7 +2,7 @@
   "name": "sortlengthyimports",
   "displayName": "Sort Lengthy Imports",
   "description": "Opinionated import sorting by length and context",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "engines": {
     "vscode": "^1.68.0"
   },
