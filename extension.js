@@ -52,42 +52,74 @@ function sort(document) {
     const newLineChar = isWindows ? "\r\n" : "\n";
     const text = rawText.split(newLineChar);
     let startedScrapingImportText = false;
+    let startedScrapingCommentText = false;
+    let comment = [];
     let imports = [];
     let tempImport = [];
 
-    const checkIfLineShouldStay = (line) => {
+    const checkIfLineShouldStay = (line, index) => {
+      const isImportLine =
+        line.startsWith("import") || line.startsWith("// import");
+      const isLineEnd = line.endsWith('";') || line.endsWith("';");
+      const isCommentStart = line.startsWith("/*");
+      const isCommentEnd = line.endsWith("*/");
       let lineShouldStay = false;
 
-      if (startedScrapingImportText) {
+      if (startedScrapingImportText || startedScrapingCommentText) {
         lineShouldStay = true;
       }
 
-      if (!startedScrapingImportText && line.startsWith("import")) {
+      if (!startedScrapingImportText && isImportLine) {
         startedScrapingImportText = true;
         lineShouldStay = true;
       }
 
-      if (
-        startedScrapingImportText &&
-        (line.endsWith('";') || line.endsWith("';"))
-      ) {
+      if (startedScrapingImportText && isLineEnd) {
         startedScrapingImportText = false;
+      }
+
+      if (index === 0 && isCommentStart) {
+        startedScrapingCommentText = true;
+        lineShouldStay = true;
+      }
+
+      if (startedScrapingCommentText && isCommentEnd) {
+        startedScrapingCommentText = false;
+        lineShouldStay = true;
       }
 
       return lineShouldStay;
     };
 
-    const importsLines = text.filter((line) => checkIfLineShouldStay(line));
+    const importsLines = text.filter((line, index) =>
+      checkIfLineShouldStay(line, index, true)
+    );
 
     startedScrapingImportText = false;
+    startedScrapingCommentText = false;
 
-    importsLines.forEach((line) => {
+    const code = text.filter(
+      (line, index) => !checkIfLineShouldStay(line, index)
+    );
+
+    const importsByContext = {
+      external: [],
+      internal: [],
+    };
+
+    importsLines.forEach((line, index) => {
+      const isImportLine =
+        line.startsWith("import") || line.startsWith("// import");
       const isLineEnd = line.endsWith('";') || line.endsWith("';");
+      const isCommentStart = line.startsWith("/*");
+      const isCommentEnd = line.endsWith("*/");
 
-      if (line.startsWith("import") && isLineEnd) {
+      if (index === 0 && isCommentStart && isCommentEnd) {
+        comment.push(line);
+      } else if (isImportLine && isLineEnd) {
         imports.push(line);
       } else {
-        if (!line.startsWith("import") && !isLineEnd) {
+        if (!isImportLine && !isLineEnd) {
           tempImport.push(line);
         }
 
@@ -101,12 +133,6 @@ function sort(document) {
         }
       }
     });
-
-    const code = text.filter((line) => !checkIfLineShouldStay(line));
-    const importsByContext = {
-      external: [],
-      internal: [],
-    };
 
     imports.forEach((string) => {
       if (string) {
@@ -128,17 +154,32 @@ function sort(document) {
 
     const hasExternals = Boolean(importsByContext.external.length);
     const hasInternals = Boolean(importsByContext.internal.length);
+    const hasComments = Boolean(comment.length);
     const importsSeparator =
       hasInternals && hasExternals ? `${newLineChar}${newLineChar}` : "";
+    const importAndCodeSeparator =
+      hasInternals || hasExternals ? `${newLineChar}${newLineChar}` : "";
     const externalExports = hasExternals
       ? `${importsByContext.external.join(newLineChar)}`
       : "";
     const internalExports = hasInternals
       ? `${importsByContext.internal.join(newLineChar)}`
       : "";
-    const restOfDocument = code.join(newLineChar);
+    const comments = hasComments ? `${comment.join(newLineChar)}` : "";
+    const commentSeparator =
+      hasComments && (hasInternals || hasExternals) ? newLineChar : "";
+    let restOfDocument;
 
-    return `${externalExports}${importsSeparator}${internalExports}${restOfDocument}`;
+    // Remove empty lines before the code start
+    for (let i = 0; i < code.length; i++) {
+      if (code[i]) {
+        restOfDocument = code.slice(i).join(newLineChar);
+
+        break;
+      }
+    }
+
+    return `${comments}${commentSeparator}${externalExports}${importsSeparator}${internalExports}${importAndCodeSeparator}${restOfDocument}`;
   } else {
     return document.getText();
   }
